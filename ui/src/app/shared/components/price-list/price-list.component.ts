@@ -346,6 +346,47 @@ export class PriceListComponent implements OnInit, OnChanges {
     );
   }
 
+
+  /** IMPLEMENTATION OF FILE UPLOAD METHOD */
+  
+onFileUpload(event: Event): void {
+  const fileInput = event.target as HTMLInputElement;
+  if (fileInput?.files?.length) {
+    const file = fileInput.files[0];
+    console.log('Uploaded file:', file);
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      // Process the first sheet of the uploaded file
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+
+      // Convert sheet data to JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      console.log('Excel Data:', jsonData);
+
+      // Map the uploaded data to match the structure of your pricing items
+      const pricingItems = jsonData.map((row: any) => ({
+        display: row['Item Name'], // Matches the 'Item Name' column
+        prices: row['Price'],     // Matches the 'Price' column
+      }));
+
+      console.log('Mapped Pricing Items:', pricingItems);
+
+      // Example: Update your pricingItems$ observable or handle the data
+      this.updatePricingItems(pricingItems);
+    };
+
+    reader.readAsArrayBuffer(file);
+  } else {
+    console.warn('No file selected');
+  }
+}
+
+  
   onSearch(e: any, departmentId: string): void {
     e.stopPropagation();
     this.itemSearchTerm = e?.target?.value;
